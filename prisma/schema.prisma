@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  dateOfBirth   DateTime @map("date_of_birth")
+  isActive      Boolean  @default(true) @map("is_active")
+  familyProfile Json?    @map("family_profile")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  goals       Goal[]
+  wallet      Wallet?
+  events      Event[]
+  simulations Simulation[]
+  insurances  Insurance[]
+  user        User?
+
+  @@map("clients")
+}
+
+model Goal {
+  id          String   @id @default(uuid())
+  description String
+  targetValue Decimal  @map("target_value") @db.Decimal(20, 2)
+  targetDate  DateTime @map("target_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  clientId String @map("client_id")
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@map("goals")
+}
+
+model Wallet {
+  id           String   @id @default(uuid())
+  totalValue   Decimal  @map("total_value") @db.Decimal(20, 2)
+  assetClasses Json?    @map("asset_classes")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  clientId String @unique @map("client_id")
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("wallets")
+}
+
+model Event {
+  id          String        @id @default(uuid())
+  category    EventCategory
+  description String
+  value       Decimal       @db.Decimal(20, 2)
+  frequency   Frequency
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  clientId String @map("client_id")
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@map("events")
+}
+
+model Simulation {
+  id         String   @id @default(uuid())
+  savedAt    DateTime @default(now()) @map("saved_at")
+  projection Json
+  rate       Decimal  @db.Decimal(5, 4)
+  endYear    Int
+
+  clientId String @map("client_id")
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, savedAt])
+  @@map("simulations")
+}
+
+model Insurance {
+  id            String        @id @default(uuid())
+  type          InsuranceType
+  coverageValue Decimal       @map("coverage_value") @db.Decimal(20, 2)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  clientId String @map("client_id")
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@map("insurances")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      UserRole
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  clientId String? @unique @map("client_id")
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@map("users")
+}
+
+enum EventCategory {
+  INCOME
+  EXPENSE
+}
+
+enum Frequency {
+  UNIQUE
+  MONTHLY
+  ANNUAL
+}
+
+enum InsuranceType {
+  LIFE
+  DISABILITY
+}
+
+enum UserRole {
+  ADVISOR
+  VIEWER
+}
