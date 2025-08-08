@@ -47,6 +47,7 @@ A arquitetura do backend foi projetada com base nos seguintes princípios:
 - **Identificadores de Entidade (UUID):** Para as chaves primárias de todas as tabelas principais, optei por usar UUIDs (Universally Unique Identifiers) em vez de inteiros autoincrementais. Esta abordagem aumenta a segurança ao não expor a contagem de registros, facilita a integração com sistemas distribuídos e previne conflitos de ID em cenários de importação de dados ou replicação. Os UUIDs são gerados pela aplicação no momento da criação do registro.
 - **Otimização de Performance com Índices:** Para garantir consultas rápidas e uma experiência de usuário fluida, mesmo com um grande volume de dados, implementei índices estratégicos no banco de dados. A maioria das consultas na aplicação são filtradas por cliente e ordenadas por data. Portanto, criei **índices compostos** (ex: `(client_id, created_at)`) nas tabelas `Events`, `Goals`, `Simulations` e `Insurances`. Esses índices permitem que o banco de dados localize e ordene os registros de um cliente específico de forma extremamente eficiente, evitando "full table scans" e melhorando drasticamente a performance das leituras.
 - **Autenticação Stateless com JWT:** O sistema utiliza JSON Web Tokens (JWT) para autenticação, seguindo uma abordagem _stateless_. Após o login, o cliente recebe um token assinado que contém o ID (`sub`) e o papel (`role`) do usuário. Este token é enviado no cabeçalho `Authorization` de cada requisição subsequente. O servidor valida o token sem precisar consultar o banco de dados para cada requisição, o que melhora a performance e a escalabilidade. O logout é gerenciado pelo cliente, que simplesmente descarta o token.
+- **Modelo de Permissões Explícitas e Hooks de Autorização:** A segurança da API é garantida por um modelo de permissões explícito, implementado através de hooks reutilizáveis do Fastify. A autenticação (`authenticate`) e a autorização de papéis (`ensureAdvisor`) são desacopladas da lógica de negócio das rotas. Isso torna o código das rotas mais limpo, simplifica os testes e centraliza as regras de segurança, seguindo o princípio DRY (Don't Repeat Yourself). Rotas administrativas (`/users/:id`) e de perfil pessoal (`/me`) são intencionalmente separadas para maior clareza e segurança.
 
 ## Suposições e Esclarecimentos
 
@@ -74,5 +75,73 @@ Endpoints responsáveis pela autenticação e gerenciamento de sessões.
     - `200 OK`: `{ "token": "string" }` - Autenticação bem-sucedida.
     - `401 Unauthorized`: `{ "message": "string" }` - Credenciais inválidas.
   - **Acesso:** Público.
+
+---
+
+### Usuários (`/users` e `/me`)
+
+Endpoints para o gerenciamento de contas de usuário e perfil pessoal.
+
+- **`POST /users`**
+
+  - **Descrição:** Cria um novo usuário (`ADVISOR` ou `VIEWER`).
+  - **Corpo da Requisição:** `{ "email": "string", "password": "string", "role": "ADVISOR" | "VIEWER", "clientId?": "string" }`
+  - **Respostas:**
+    - `201 Created`: Objeto do usuário criado (sem a senha).
+    - `409 Conflict`: `{ "message": "string" }` - E-mail já está em uso.
+    - `404 Not Found`: `{ "message": "string" }` - `clientId` fornecido não existe.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+- **`GET /users`**
+
+  - **Descrição:** Lista todos os usuários do sistema com paginação.
+  - **Query Params:** `?page=number&pageSize=number`
+  - **Respostas:**
+    - `200 OK`: Objeto paginado `{ "users": [...], "meta": { ... } }`.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+- **`GET /users/:id`**
+
+  - **Descrição:** Retorna os dados de um usuário específico.
+  - **Respostas:**
+    - `200 OK`: Objeto do usuário (sem a senha).
+    - `404 Not Found`: `{ "message": "string" }` - Usuário não encontrado.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+- **`GET /me`**
+
+  - **Descrição:** Retorna os dados do usuário atualmente autenticado.
+  - **Respostas:**
+    - `200 OK`: Objeto do usuário (sem a senha).
+    - `404 Not Found`: O usuário associado ao token não existe mais no banco.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** Qualquer usuário autenticado.
+
+- **`PUT /users/:id`**
+
+  - **Descrição:** Atualiza os dados de um usuário específico.
+  - **Corpo da Requisição:** Objeto com os campos a serem atualizados.
+  - **Respostas:**
+    - `200 OK`: Objeto do usuário atualizado.
+    - `404 Not Found`: `{ "message": "string" }` - Usuário não encontrado.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+- **`DELETE /users/:id`**
+  - **Descrição:** Deleta um usuário específico.
+  - **Respostas:**
+    - `204 No Content`: Usuário deletado com sucesso.
+    - `404 Not Found`: `{ "message": "string" }` - Usuário não encontrado.
+    - `400 Bad Request`: `{ "message": "string" }` - Tentativa de auto-deleção.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
 
 ---

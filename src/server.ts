@@ -11,6 +11,7 @@ import { fastifySwaggerUi } from "@fastify/swagger-ui";
 import { fastifyJwt } from "@fastify/jwt";
 import { config } from "dotenv";
 import { resolve } from "path";
+import { userRoutes } from "./routes/user.routes";
 import { sessionRoutes } from "./routes/session.routes";
 import { authenticate, ensureAdvisor } from "./hooks/auth";
 
@@ -51,6 +52,7 @@ app.register(fastifySwagger, {
 });
 
 app.register(fastifySwaggerUi, { routePrefix: "/docs" });
+app.register(userRoutes);
 app.register(sessionRoutes);
 
 app.decorate("authenticate", authenticate);
