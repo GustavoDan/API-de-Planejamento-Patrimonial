@@ -8,14 +8,15 @@ import {
 } from "fastify-type-provider-zod";
 import { fastifySwagger } from "@fastify/swagger";
 import { fastifySwaggerUi } from "@fastify/swagger-ui";
-import { routes } from "./routes";
 import { fastifyJwt } from "@fastify/jwt";
 import { config } from "dotenv";
 import { resolve } from "path";
+import { sessionRoutes } from "./routes/session.routes";
+import { authenticate, ensureAdvisor } from "./hooks/auth";
 
 config({ path: resolve(__dirname, "..", ".env") });
 
-const app = fastify({
+export const app = fastify({
   logger: true,
 }).withTypeProvider<ZodTypeProvider>();
 if (!process.env.JWT_SECRET) {
@@ -50,6 +51,9 @@ app.register(fastifySwagger, {
 });
 
 app.register(fastifySwaggerUi, { routePrefix: "/docs" });
-app.register(routes);
+app.register(sessionRoutes);
+
+app.decorate("authenticate", authenticate);
+app.decorate("ensureAdvisor", ensureAdvisor);
 
 app.listen({ port: 3000 });

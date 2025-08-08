@@ -46,6 +46,7 @@ A arquitetura do backend foi projetada com base nos seguintes princípios:
 - **Manuseio de Valores Monetários:** Para garantir a precisão absoluta em todos os cálculos financeiros e evitar erros de arredondamento inerentes aos tipos de ponto flutuante (`Float`), todos os campos que representam dinheiro (`targetValue`, `totalValue`, etc.) foram implementados usando o tipo `Decimal` do Prisma. Este tipo é mapeado para o tipo `NUMERIC` de precisão exata no PostgreSQL, que é o padrão da indústria para aplicações financeiras.
 - **Identificadores de Entidade (UUID):** Para as chaves primárias de todas as tabelas principais, optei por usar UUIDs (Universally Unique Identifiers) em vez de inteiros autoincrementais. Esta abordagem aumenta a segurança ao não expor a contagem de registros, facilita a integração com sistemas distribuídos e previne conflitos de ID em cenários de importação de dados ou replicação. Os UUIDs são gerados pela aplicação no momento da criação do registro.
 - **Otimização de Performance com Índices:** Para garantir consultas rápidas e uma experiência de usuário fluida, mesmo com um grande volume de dados, implementei índices estratégicos no banco de dados. A maioria das consultas na aplicação são filtradas por cliente e ordenadas por data. Portanto, criei **índices compostos** (ex: `(client_id, created_at)`) nas tabelas `Events`, `Goals`, `Simulations` e `Insurances`. Esses índices permitem que o banco de dados localize e ordene os registros de um cliente específico de forma extremamente eficiente, evitando "full table scans" e melhorando drasticamente a performance das leituras.
+- **Autenticação Stateless com JWT:** O sistema utiliza JSON Web Tokens (JWT) para autenticação, seguindo uma abordagem _stateless_. Após o login, o cliente recebe um token assinado que contém o ID (`sub`) e o papel (`role`) do usuário. Este token é enviado no cabeçalho `Authorization` de cada requisição subsequente. O servidor valida o token sem precisar consultar o banco de dados para cada requisição, o que melhora a performance e a escalabilidade. O logout é gerenciado pelo cliente, que simplesmente descarta o token.
 
 ## Suposições e Esclarecimentos
 
@@ -55,3 +56,23 @@ Durante o desenvolvimento, algumas decisões foram tomadas com base em interpret
 - **Criação do Modelo `User`:** Para implementar a autenticação JWT com papéis (`advisor`, `viewer`) de forma segura e escalável, foi criado um modelo `User`. Este modelo armazena as credenciais de login e o papel do usuário, sendo distinto do modelo `Client`, que armazena os dados pessoais e financeiros.
 - **Armazenamento de Idade vs. Data de Nascimento:** O case pedia para armazenar a "idade" do cliente. No entanto, armazenar uma idade como um número estático é uma má prática, pois o dado se torna obsoleto anualmente. Para garantir a precisão e a integridade dos dados ao longo do tempo, foi tomada a decisão de armazenar o campo `dateOfBirth` (data de nascimento). A idade é então calculada dinamicamente no backend sempre que necessário, garantindo que a informação seja sempre atual e precisa.
 - **Estrutura do Modelo de Eventos (`Event`):** Para aumentar a robustez e a clareza, o campo que descreve o tipo de um evento foi dividido em duas partes: um campo `category` (um Enum que define o impacto financeiro: `INCOME` ou `EXPENSE`) e um campo `description` (um String para o contexto do usuário). Esta separação permite que o motor de projeção opere de forma segura com base na categoria, enquanto o usuário mantém a flexibilidade de descrever o evento detalhadamente.
+
+## Endpoints da API
+
+A documentação interativa completa da API está disponível via Swagger na rota `/docs` quando a aplicação está em execução. Abaixo está um resumo dos principais endpoints implementados.
+
+---
+
+### Sessões (`/sessions`)
+
+Endpoints responsáveis pela autenticação e gerenciamento de sessões.
+
+- **`POST /sessions`**
+  - **Descrição:** Autentica um usuário e retorna um token JWT.
+  - **Corpo da Requisição:** `{ "email": "string", "password": "string" }`
+  - **Respostas:**
+    - `200 OK`: `{ "token": "string" }` - Autenticação bem-sucedida.
+    - `401 Unauthorized`: `{ "message": "string" }` - Credenciais inválidas.
+  - **Acesso:** Público.
+
+---
