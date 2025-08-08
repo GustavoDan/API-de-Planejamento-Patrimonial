@@ -145,3 +145,55 @@ Endpoints para o gerenciamento de contas de usuário e perfil pessoal.
   - **Acesso:** `ADVISOR`.
 
 ---
+
+### Clientes (`/clients`)
+
+Endpoints para o gerenciamento de dados de clientes. O acesso a todas estas rotas é restrito a usuários com o papel `ADVISOR`.
+
+- **`POST /clients`**
+
+  - **Descrição:** Cria um novo cliente no sistema.
+  - **Corpo da Requisição:** `{ "name": "string", "email": "string", "dateOfBirth": "string (ISO 8601)", "isActive?": "boolean", "familyProfile?": [...] }`
+  - **Respostas:**
+    - `201 Created`: Objeto do cliente recém-criado.
+    - `409 Conflict`: `{ "message": "string" }` - Um cliente com o e-mail fornecido já existe.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+
+- **`GET /clients`**
+
+  - **Descrição:** Lista todos os clientes com paginação.
+  - **Query Params:** `?page=number&pageSize=number`
+  - **Respostas:**
+    - `200 OK`: Objeto paginado `{ "clients": [...], "meta": { ... } }`.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+
+- **`GET /clients/:id`**
+
+  - **Descrição:** Retorna os detalhes de um cliente específico.
+  - **Respostas:**
+    - `200 OK`: Objeto do cliente.
+    - `404 Not Found`: `{ "message": "string" }` - Cliente não encontrado.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+
+- **`PUT /clients/:id`**
+
+  - **Descrição:** Atualiza os dados de um cliente específico.
+  - **Corpo da Requisição:** Objeto com os campos a serem atualizados.
+  - **Respostas:**
+    - `200 OK`: Objeto do cliente atualizado.
+    - `404 Not Found`: `{ "message": "string" }` - Cliente não encontrado.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+
+- **`DELETE /clients/:id`**
+  - **Descrição:** Deleta um cliente específico.
+  - **Respostas:**
+    - `204 No Content`: Cliente deletado com sucesso.
+    - `404 Not Found`: `{ "message": "string" }` - Cliente não encontrado.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+
+---

@@ -14,6 +14,7 @@ import { resolve } from "path";
 import { userRoutes } from "./routes/user.routes";
 import { sessionRoutes } from "./routes/session.routes";
 import { authenticate, ensureAdvisor } from "./hooks/auth";
+import { clientRoutes } from "./routes/client.routes";
 
 config({ path: resolve(__dirname, "..", ".env") });
 
@@ -54,6 +55,7 @@ app.register(fastifySwagger, {
 app.register(fastifySwaggerUi, { routePrefix: "/docs" });
 app.register(userRoutes);
 app.register(sessionRoutes);
+app.register(clientRoutes);
 
 app.decorate("authenticate", authenticate);
 app.decorate("ensureAdvisor", ensureAdvisor);
