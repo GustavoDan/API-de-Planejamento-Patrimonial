@@ -125,7 +125,7 @@ describe("User Routes (CRUD)", () => {
     });
   });
 
-  describe("GET /users/:id and /me", () => {
+  describe("GET /users/:userId and /me", () => {
     it("should allow an ADVISOR to get any user by ID", async () => {
       const { user } = await createTestUser({ role: "VIEWER" });
 
@@ -180,7 +180,7 @@ describe("User Routes (CRUD)", () => {
     expect(response.body).toHaveProperty("message");
   });
 
-  describe("PUT /users/:id", () => {
+  describe("PUT /users/:userId", () => {
     it("should allow an ADVISOR to update a user", async () => {
       const { user } = await createTestUser({ role: "VIEWER" });
 
@@ -239,7 +239,7 @@ describe("User Routes (CRUD)", () => {
     });
   });
 
-  describe("DELETE /users/:id", () => {
+  describe("DELETE /users/:userId", () => {
     it("should allow an ADVISOR to delete a user", async () => {
       const { user } = await createTestUser({ role: "VIEWER" });
 

@@ -20,7 +20,7 @@ export const createClientSchema = z.object({
 export const updateClientSchema = createClientSchema.partial();
 
 export const clientIdParamsSchema = z.object({
-  id: z.uuid(),
+  clientId: z.uuid(),
 });
 
 export const clientResponseSchema = z.object({

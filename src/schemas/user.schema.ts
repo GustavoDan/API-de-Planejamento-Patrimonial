@@ -33,7 +33,7 @@ export const userResponseSchema = z.object({
 export const listUsersResponseSchema = z.array(userResponseSchema);
 
 export const userIdParamsSchema = z.object({
-  id: z.uuid(),
+  userId: z.uuid(),
 });
 
 export const updateUserSchema = z.object({

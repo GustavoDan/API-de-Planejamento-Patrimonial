@@ -122,7 +122,7 @@ describe("Client Routes (CRUD)", () => {
     });
   });
 
-  describe("GET /clients/:id", () => {
+  describe("GET /clients/:clientId", () => {
     it("should allow an ADVISOR to get a specific client by ID", async () => {
       const client = await createTestClient();
 
@@ -163,7 +163,7 @@ describe("Client Routes (CRUD)", () => {
     expect(response.body).toHaveProperty("message");
   });
 
-  describe("PUT /clients/:id", () => {
+  describe("PUT /clients/:clientId", () => {
     it("should allow an ADVISOR to update a client's data", async () => {
       const client = await createTestClient();
       const updatePayload = { name: "Nome Atualizado", isActive: false };
@@ -208,7 +208,7 @@ describe("Client Routes (CRUD)", () => {
     });
   });
 
-  describe("DELETE /clients/:id", () => {
+  describe("DELETE /clients/:clientId", () => {
     it("should allow an ADVISOR to delete a client", async () => {
       const client = await createTestClient();
 

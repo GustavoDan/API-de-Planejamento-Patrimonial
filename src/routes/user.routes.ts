@@ -67,7 +67,7 @@ export async function userRoutes(app: FastifyInstance) {
   );
 
   app.get(
-    "/users/:id",
+    "/users/:userId",
     {
       onRequest: [app.authenticate, app.ensureAdvisor],
       schema: {
@@ -84,7 +84,7 @@ export async function userRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const { id } = userIdParamsSchema.parse(request.params);
+      const { userId: id } = userIdParamsSchema.parse(request.params);
 
       const user = await prisma.user.findUnique({
         where: {
@@ -178,7 +178,7 @@ export async function userRoutes(app: FastifyInstance) {
   );
 
   app.put(
-    "/users/:id",
+    "/users/:userId",
     {
       onRequest: [app.authenticate, app.ensureAdvisor],
       schema: {
@@ -196,7 +196,7 @@ export async function userRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const { id } = userIdParamsSchema.parse(request.params);
+      const { userId: id } = userIdParamsSchema.parse(request.params);
       let { email, password, role } = updateUserSchema.parse(request.body);
 
       if (password) {
@@ -224,7 +224,7 @@ export async function userRoutes(app: FastifyInstance) {
   );
 
   app.delete(
-    "/users/:id",
+    "/users/:userId",
     {
       onRequest: [app.authenticate, app.ensureAdvisor],
       schema: {
@@ -242,7 +242,7 @@ export async function userRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const { id } = userIdParamsSchema.parse(request.params);
+      const { userId: id } = userIdParamsSchema.parse(request.params);
 
       if (request.user.sub === id) {
         return reply

@@ -67,7 +67,7 @@ export async function clientRoutes(app: FastifyInstance) {
   );
 
   app.get(
-    "/clients/:id",
+    "/clients/:clientId",
     {
       onRequest: [app.authenticate, app.ensureAdvisor],
       schema: {
@@ -84,7 +84,7 @@ export async function clientRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const { id } = clientIdParamsSchema.parse(request.params);
+      const { clientId: id } = clientIdParamsSchema.parse(request.params);
 
       const client = await prisma.client.findUnique({
         where: { id },
@@ -135,7 +135,7 @@ export async function clientRoutes(app: FastifyInstance) {
   );
 
   app.put(
-    "/clients/:id",
+    "/clients/:clientId",
     {
       onRequest: [app.authenticate, app.ensureAdvisor],
       schema: {
@@ -153,7 +153,7 @@ export async function clientRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const { id } = clientIdParamsSchema.parse(request.params);
+      const { clientId: id } = clientIdParamsSchema.parse(request.params);
       const data = updateClientSchema.parse(request.body);
 
       try {
@@ -176,7 +176,7 @@ export async function clientRoutes(app: FastifyInstance) {
   );
 
   app.delete(
-    "/clients/:id",
+    "/clients/:clientId",
     {
       onRequest: [app.authenticate, app.ensureAdvisor],
       schema: {
@@ -193,7 +193,7 @@ export async function clientRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const { id } = clientIdParamsSchema.parse(request.params);
+      const { clientId: id } = clientIdParamsSchema.parse(request.params);
 
       try {
         await prisma.client.delete({ where: { id } });
