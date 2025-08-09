@@ -350,3 +350,60 @@ Endpoints para o gerenciamento de movimentações financeiras (eventos) que afet
   - **Acesso:** `ADVISOR`.
 
 ---
+
+### Seguros (`/insurances`)
+
+Endpoints para o gerenciamento dos seguros de um cliente.
+
+- **`POST /clients/:clientId/insurances`**
+
+  - **Descrição:** Cria um novo seguro para um cliente específico.
+  - **Corpo da Requisição:** `{ "type": "LIFE" | "DISABILITY", "coverageValue": number }`
+  - **Respostas:**
+    - `201 Created`: Objeto do seguro criado (com `coverageValue` como `string`).
+    - `404 Not Found`: `{ "message": "string" }` - Cliente com o `clientId` especificado não foi encontrado.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+- **`GET /clients/:clientId/insurances`**
+
+  - **Descrição:** Lista todos os seguros de um cliente específico com paginação.
+  - **Query Params:** `?page=number&pageSize=number`
+  - **Respostas:**
+    - `200 OK`: Objeto paginado `{ "insurances": [...], "meta": { ... } }` (com `coverageValue` como `string`).
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR` nem o dono dos dados.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR` ou o `VIEWER` dono do cliente.
+
+- **`GET /insurances/:insuranceId`**
+
+  - **Descrição:** Retorna os detalhes de um seguro específico.
+  - **Respostas:**
+    - `200 OK`: Objeto do seguro (com `coverageValue` como `string`).
+    - `404 Not Found`: `{ "message": "string" }` - Seguro com o ID especificado não foi encontrado.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR` nem o dono do seguro.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR` ou o `VIEWER` dono do seguro.
+
+- **`PUT /insurances/:insuranceId`**
+
+  - **Descrição:** Atualiza os dados de um seguro específico.
+  - **Corpo da Requisição:** Objeto com os campos a serem atualizados (todos opcionais).
+  - **Respostas:**
+    - `200 OK`: Objeto do seguro atualizado (com `coverageValue` como `string`).
+    - `404 Not Found`: `{ "message": "string" }` - Seguro não encontrado.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+- **`DELETE /insurances/:insuranceId`**
+  - **Descrição:** Deleta um seguro específico.
+  - **Respostas:**
+    - `204 No Content`: Seguro deletado com sucesso.
+    - `404 Not Found`: `{ "message": "string" }` - Seguro não encontrado.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+---
