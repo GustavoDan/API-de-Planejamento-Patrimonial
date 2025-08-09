@@ -19,6 +19,7 @@ import {
   ensureOwnerOrAdvisor,
 } from "./hooks/auth";
 import { clientRoutes } from "./routes/client.routes";
+import { goalRoutes } from "./routes/goal.routes";
 
 config({ path: resolve(__dirname, "..", ".env") });
 
@@ -60,6 +61,7 @@ app.register(fastifySwaggerUi, { routePrefix: "/docs" });
 app.register(userRoutes);
 app.register(sessionRoutes);
 app.register(clientRoutes);
+app.register(goalRoutes);
 
 app.decorate("authenticate", authenticate);
 app.decorate("ensureAdvisor", ensureAdvisor);

@@ -48,6 +48,8 @@ A arquitetura do backend foi projetada com base nos seguintes princípios:
 - **Otimização de Performance com Índices:** Para garantir consultas rápidas e uma experiência de usuário fluida, mesmo com um grande volume de dados, implementei índices estratégicos no banco de dados. A maioria das consultas na aplicação são filtradas por cliente e ordenadas por data. Portanto, criei **índices compostos** (ex: `(client_id, created_at)`) nas tabelas `Events`, `Goals`, `Simulations` e `Insurances`. Esses índices permitem que o banco de dados localize e ordene os registros de um cliente específico de forma extremamente eficiente, evitando "full table scans" e melhorando drasticamente a performance das leituras.
 - **Autenticação Stateless com JWT:** O sistema utiliza JSON Web Tokens (JWT) para autenticação, seguindo uma abordagem _stateless_. Após o login, o cliente recebe um token assinado que contém o ID (`sub`) e o papel (`role`) do usuário. Este token é enviado no cabeçalho `Authorization` de cada requisição subsequente. O servidor valida o token sem precisar consultar o banco de dados para cada requisição, o que melhora a performance e a escalabilidade. O logout é gerenciado pelo cliente, que simplesmente descarta o token.
 - **Modelo de Permissões Explícitas e Hooks de Autorização:** A segurança da API é garantida por um modelo de permissões explícito, implementado através de hooks reutilizáveis do Fastify. A autenticação (`authenticate`) e a autorização de papéis (`ensureAdvisor`) são desacopladas da lógica de negócio das rotas. Isso torna o código das rotas mais limpo, simplifica os testes e centraliza as regras de segurança, seguindo o princípio DRY (Don't Repeat Yourself). Rotas administrativas (`/users/:clientId`) e de perfil pessoal (`/me`) são intencionalmente separadas para maior clareza e segurança.
+- **Controle de Acesso Granular (Baseado em Propriedade):** Para além da simples verificação de papéis (`role`), a API implementa um controle de acesso baseado na propriedade dos dados. Isso é evidente nas rotas de leitura de Metas (`Goals`), onde um `VIEWER` tem permissão para acessar apenas os recursos que estão associados ao seu `clientId`. Esta lógica é garantida tanto por hooks reutilizáveis (`ensureOwnerOrAdvisor`) quanto por verificações explícitas dentro das rotas, assegurando a privacidade e a segurança dos dados de cada cliente.
+- **Serialização de Tipos Decimais para `string`:** Para prevenir a perda de precisão que pode ocorrer ao serializar tipos de dados `Decimal` (usados para valores monetários), todos os valores decimais são convertidos para `string` antes de serem enviados nas respostas da API. Isso garante que o frontend receba o valor exato, sem erros de arredondamento de ponto flutuante, sendo responsabilidade do cliente da API fazer o parse para um formato numérico seguro.
 
 ## Suposições e Esclarecimentos
 
@@ -195,5 +197,62 @@ Endpoints para o gerenciamento de dados de clientes. O acesso a todas estas rota
     - `404 Not Found`: `{ "message": "string" }` - Cliente não encontrado.
     - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
     - `401 Unauthorized`: Token não fornecido ou inválido.
+
+---
+
+### Metas (`/goals`)
+
+Endpoints para o gerenciamento das metas financeiras dos clientes. As rotas de criação e modificação são restritas a `ADVISORs`, enquanto as rotas de leitura permitem que `VIEWERs` acessem seus próprios dados.
+
+- **`POST /clients/:clientId/goals`**
+
+  - **Descrição:** Cria uma nova meta para um cliente específico.
+  - **Corpo da Requisição:** `{ "description": "string", "targetValue": number, "targetDate": "string (ISO 8601)" }`
+  - **Respostas:**
+    - `201 Created`: Objeto da meta criada (com `targetValue` como `string`).
+    - `404 Not Found`: `{ "message": "string" }` - Cliente com o `clientId` especificado não foi encontrado.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+- **`GET /clients/:clientId/goals`**
+
+  - **Descrição:** Lista todas as metas de um cliente específico com paginação.
+  - **Query Params:** `?page=number&pageSize=number`
+  - **Respostas:**
+    - `200 OK`: Objeto paginado `{ "goals": [...], "meta": { ... } }` (com `targetValue` como `string`).
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR` nem o dono dos dados.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR` ou o `VIEWER` dono do cliente.
+
+- **`GET /goals/:goalId`**
+
+  - **Descrição:** Retorna os detalhes de uma meta específica.
+  - **Respostas:**
+    - `200 OK`: Objeto da meta (com `targetValue` como `string`).
+    - `404 Not Found`: `{ "message": "string" }` - Meta com o ID especificado não foi encontrada.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR` nem o dono da meta.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR` ou o `VIEWER` dono da meta.
+
+- **`PUT /goals/:goalId`**
+
+  - **Descrição:** Atualiza os dados de uma meta específica.
+  - **Corpo da Requisição:** Objeto com os campos a serem atualizados (todos opcionais).
+  - **Respostas:**
+    - `200 OK`: Objeto da meta atualizada (com `targetValue` como `string`).
+    - `404 Not Found`: `{ "message": "string" }` - Meta não encontrada.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+- **`DELETE /goals/:goalId`**
+  - **Descrição:** Deleta uma meta específica.
+  - **Respostas:**
+    - `204 No Content`: Meta deletada com sucesso.
+    - `404 Not Found`: `{ "message": "string" }` - Meta não encontrada.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
 
 ---
