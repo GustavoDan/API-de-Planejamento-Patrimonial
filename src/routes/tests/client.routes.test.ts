@@ -23,14 +23,14 @@ describe("Client Routes (CRUD)", () => {
     await prisma.user.deleteMany({
       where: {
         email: {
-          contains: TEST_EMAIL_SUFFIX,
+          endsWith: TEST_EMAIL_SUFFIX,
         },
       },
     });
     await prisma.client.deleteMany({
       where: {
         email: {
-          contains: TEST_EMAIL_SUFFIX,
+          endsWith: TEST_EMAIL_SUFFIX,
         },
       },
     });
@@ -146,21 +146,21 @@ describe("Client Routes (CRUD)", () => {
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty("message");
     });
-  });
 
-  it("should return 403 if a VIEWER tries to get a client by ID", async () => {
-    const client = await createTestClient();
-    const { user, plainPassword } = await createTestUser({
-      role: "VIEWER",
+    it("should return 403 if a VIEWER tries to get a client by ID", async () => {
+      const client = await createTestClient();
+      const { user, plainPassword } = await createTestUser({
+        role: "VIEWER",
+      });
+      const userToken = await loginAndGetToken(user.email, plainPassword);
+
+      const response = await request(app.server)
+        .get(`/clients/${client.id}`)
+        .set("Authorization", `Bearer ${userToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body).toHaveProperty("message");
     });
-    const userToken = await loginAndGetToken(user.email, plainPassword);
-
-    const response = await request(app.server)
-      .get(`/clients/${client.id}`)
-      .set("Authorization", `Bearer ${userToken}`);
-
-    expect(response.status).toBe(403);
-    expect(response.body).toHaveProperty("message");
   });
 
   describe("PUT /clients/:clientId", () => {
@@ -204,6 +204,21 @@ describe("Client Routes (CRUD)", () => {
         .send({ name: "Fantasma" });
 
       expect(response.status).toBe(404);
+      expect(response.body).toHaveProperty("message");
+    });
+
+    it("should return 409 if updating a client email to one that already exists", async () => {
+      const targetClient = await createTestClient({ emailPrefix: "target" });
+      const existingClient = await createTestClient({
+        emailPrefix: "existing",
+      });
+
+      const response = await request(app.server)
+        .put(`/clients/${targetClient.id}`)
+        .set("Authorization", `Bearer ${advisorToken}`)
+        .send({ email: existingClient.email });
+
+      expect(response.status).toBe(409);
       expect(response.body).toHaveProperty("message");
     });
   });

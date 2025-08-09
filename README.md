@@ -132,6 +132,7 @@ Endpoints para o gerenciamento de contas de usuário e perfil pessoal.
   - **Corpo da Requisição:** Objeto com os campos a serem atualizados.
   - **Respostas:**
     - `200 OK`: Objeto do usuário atualizado.
+    - `409 Conflict`: `{ "message": "string" }` - O e-mail fornecido já está em uso por outro usuário.
     - `404 Not Found`: `{ "message": "string" }` - Usuário não encontrado.
     - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
     - `401 Unauthorized`: Token não fornecido ou inválido.
@@ -188,6 +189,7 @@ Endpoints para o gerenciamento de dados de clientes. O acesso a todas estas rota
   - **Respostas:**
     - `200 OK`: Objeto do cliente atualizado.
     - `404 Not Found`: `{ "message": "string" }` - Cliente não encontrado.
+    - `409 Conflict`: `{ "message": "string" }` - O e-mail fornecido já está em uso por outro cliente.
     - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
     - `401 Unauthorized`: Token não fornecido ou inválido.
 

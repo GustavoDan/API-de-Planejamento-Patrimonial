@@ -23,14 +23,14 @@ describe("User Routes (CRUD)", () => {
     await prisma.user.deleteMany({
       where: {
         email: {
-          contains: TEST_EMAIL_SUFFIX,
+          endsWith: TEST_EMAIL_SUFFIX,
         },
       },
     });
     await prisma.client.deleteMany({
       where: {
         email: {
-          contains: TEST_EMAIL_SUFFIX,
+          endsWith: TEST_EMAIL_SUFFIX,
         },
       },
     });
@@ -235,6 +235,25 @@ describe("User Routes (CRUD)", () => {
         .send({ password: "newpassword" });
 
       expect(response.status).toBe(404);
+      expect(response.body).toHaveProperty("message");
+    });
+
+    it("should return 409 if updating a user email to one that already exists", async () => {
+      const { user: targetUser } = await createTestUser({
+        role: "VIEWER",
+        emailPrefix: "target",
+      });
+      const { user: existingUser } = await createTestUser({
+        role: "VIEWER",
+        emailPrefix: "existing",
+      });
+
+      const response = await request(app.server)
+        .put(`/users/${targetUser.id}`)
+        .set("Authorization", `Bearer ${advisorToken}`)
+        .send({ email: existingUser.email });
+
+      expect(response.status).toBe(409);
       expect(response.body).toHaveProperty("message");
     });
   });

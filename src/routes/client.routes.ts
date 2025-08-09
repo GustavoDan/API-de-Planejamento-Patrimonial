@@ -148,6 +148,7 @@ export async function clientRoutes(app: FastifyInstance) {
           401: returnMessageSchema,
           403: returnMessageSchema,
           404: returnMessageSchema,
+          409: returnMessageSchema,
         },
         security: [{ bearerAuth: [] }],
       },
@@ -164,13 +165,20 @@ export async function clientRoutes(app: FastifyInstance) {
         });
         return reply.status(200).send(updatedClient);
       } catch (error) {
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === "P2025"
-        ) {
-          return reply.status(404).send({ message: "Cliente não encontrado." });
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          if (error.code === "P2025") {
+            return reply
+              .status(404)
+              .send({ message: "Usuário não encontrado." });
+          }
+          if (error.code === "P2002") {
+            return reply.status(409).send({
+              message: "O e-mail fornecido já está em uso por outro usuário.",
+            });
+          }
+
+          throw error;
         }
-        throw error;
       }
     }
   );
