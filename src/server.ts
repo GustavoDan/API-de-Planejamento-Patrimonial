@@ -13,7 +13,11 @@ import { config } from "dotenv";
 import { resolve } from "path";
 import { userRoutes } from "./routes/user.routes";
 import { sessionRoutes } from "./routes/session.routes";
-import { authenticate, ensureAdvisor } from "./hooks/auth";
+import {
+  authenticate,
+  ensureAdvisor,
+  ensureOwnerOrAdvisor,
+} from "./hooks/auth";
 import { clientRoutes } from "./routes/client.routes";
 
 config({ path: resolve(__dirname, "..", ".env") });
@@ -59,5 +63,6 @@ app.register(clientRoutes);
 
 app.decorate("authenticate", authenticate);
 app.decorate("ensureAdvisor", ensureAdvisor);
+app.decorate("ensureOwnerOrAdvisor", ensureOwnerOrAdvisor);
 
 app.listen({ port: 3000 });

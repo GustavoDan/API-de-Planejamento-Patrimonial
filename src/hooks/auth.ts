@@ -1,5 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { clientIdParamsSchema } from "../schemas/client.schema";
 
 const jwtPayloadSchema = z.object({
   sub: z.uuid(),
@@ -35,4 +36,27 @@ export async function ensureAdvisor(
       message: "Acesso negado. Esta rota é restrita a administradores.",
     });
   }
+}
+
+export async function ensureOwnerOrAdvisor(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const { role, clientId: userClientId } = request.user;
+
+  if (role === "ADVISOR") {
+    return;
+  }
+
+  const { clientId: targetClientId } = clientIdParamsSchema.parse(
+    request.params
+  );
+
+  if (role === "VIEWER" && userClientId === targetClientId) {
+    return;
+  }
+
+  return reply.status(403).send({
+    message: "Acesso negado. Você não tem permissão para acessar este recurso.",
+  });
 }
