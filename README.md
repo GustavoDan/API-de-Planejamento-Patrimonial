@@ -293,3 +293,60 @@ Endpoints para o gerenciamento da carteira de um cliente (patrimônio e alocaç�
   - **Acesso:** `ADVISOR`.
 
 ---
+
+### Movimentações / Eventos (`/events`)
+
+Endpoints para o gerenciamento de movimentações financeiras (eventos) que afetam a projeção patrimonial de um cliente.
+
+- **`POST /clients/:clientId/events`**
+
+  - **Descrição:** Cria uma nova movimentação para um cliente específico.
+  - **Corpo da Requisição:** `{ "description": "string", "category": "INCOME" | "EXPENSE", "value": number, "frequency": "UNIQUE" | "MONTHLY" | "ANNUAL" }`
+  - **Respostas:**
+    - `201 Created`: Objeto da movimentação criada (com `value` como `string`).
+    - `404 Not Found`: `{ "message": "string" }` - Cliente com o `clientId` especificado não foi encontrado.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+- **`GET /clients/:clientId/events`**
+
+  - **Descrição:** Lista todas as movimentações de um cliente específico com paginação.
+  - **Query Params:** `?page=number&pageSize=number`
+  - **Respostas:**
+    - `200 OK`: Objeto paginado `{ "events": [...], "meta": { ... } }` (com `value` como `string`).
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR` nem o dono dos dados.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR` ou o `VIEWER` dono do cliente.
+
+- **`GET /events/:eventId`**
+
+  - **Descrição:** Retorna os detalhes de uma movimentação específica.
+  - **Respostas:**
+    - `200 OK`: Objeto da movimentação (com `value` como `string`).
+    - `404 Not Found`: `{ "message": "string" }` - Movimentação com o ID especificado não foi encontrada.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR` nem o dono da movimentação.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR` ou o `VIEWER` dono da movimentação.
+
+- **`PUT /events/:eventId`**
+
+  - **Descrição:** Atualiza os dados de uma movimentação específica.
+  - **Corpo da Requisição:** Objeto com os campos a serem atualizados (todos opcionais).
+  - **Respostas:**
+    - `200 OK`: Objeto da movimentação atualizada (com `value` como `string`).
+    - `404 Not Found`: `{ "message": "string" }` - Movimentação não encontrada.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+- **`DELETE /events/:eventId`**
+  - **Descrição:** Deleta uma movimentação específica.
+  - **Respostas:**
+    - `204 No Content`: Movimentação deletada com sucesso.
+    - `404 Not Found`: `{ "message": "string" }` - Movimentação não encontrada.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+---
