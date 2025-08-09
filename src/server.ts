@@ -23,6 +23,7 @@ import { goalRoutes } from "./routes/goal.routes";
 import { walletRoutes } from "./routes/wallet.routes";
 import { eventRoutes } from "./routes/event.routes";
 import { insuranceRoutes } from "./routes/insurance.routes";
+import { planningRoutes } from "./routes/planning.routes";
 
 config({ path: resolve(__dirname, "..", ".env") });
 
@@ -68,6 +69,7 @@ app.register(goalRoutes);
 app.register(walletRoutes);
 app.register(eventRoutes);
 app.register(insuranceRoutes);
+app.register(planningRoutes);
 
 app.decorate("authenticate", authenticate);
 app.decorate("ensureAdvisor", ensureAdvisor);

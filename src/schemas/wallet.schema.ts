@@ -2,9 +2,7 @@ import { z } from "zod";
 import { assetClassSchema } from "./shared.schema";
 
 export const upsertWalletSchema = z.object({
-  totalValue: z
-    .number()
-    .positive("O patrimônio total deve ser um valor positivo."),
+  totalValue: z.number().min(0, "O patrimônio total não pode ser negativo."),
   assetClasses: z.array(assetClassSchema).optional(),
 });
 

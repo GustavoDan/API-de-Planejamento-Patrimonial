@@ -56,10 +56,16 @@ A arquitetura do backend foi projetada com base nos seguintes princípios:
 
 Durante o desenvolvimento, algumas decisões foram tomadas com base em interpretações dos requisitos, uma vez que o case não especificava todos os detalhes. As principais suposições foram:
 
+- **Correção da Fórmula de Alinhamento:** A especificação do case sugeria a fórmula `(patrimônio no plano / patrimônio atual)` para o cálculo de alinhamento. Após análise da lógica de negócio, identifiquei que esta fórmula leva a resultados contra-intuitivos (ex: um patrimônio baixo resultaria em um percentual de alinhamento altíssimo). Para refletir corretamente o progresso em direção às metas, implementei a fórmula: **`(patrimônio atual / patrimônio no plano) * 100`**. Esta correção garante que a categorização de cores (`verde`, `vermelho`, etc.) represente de forma precisa e intuitiva o quão próximo o cliente está de atingir seus objetivos financeiros.
+- **Definição de "Patrimônio no Plano":** O case não especificava como o "patrimônio no plano" deveria ser calculado. Assumi que ele representa a **soma dos valores-alvo (`targetValue`) de todas as metas (`Goal`)** cadastradas para o cliente. Esta abordagem oferece uma visão holística do plano financeiro total do cliente.
+- **Tratamento de Casos de Borda no Cálculo de Alinhamento:** A lógica de cálculo foi projetada para ser robusta. Se um cliente não possui metas cadastradas ou se o valor total do plano for zero, o alinhamento é tratado de forma a evitar erros (como divisão por zero) e retornar um resultado lógico (ex: 100% de alinhamento se o cliente já possui patrimônio, mas não tem metas definidas). Da mesma forma, se o cliente não possui uma carteira, o cálculo não é possível e um erro claro é retornado.
 - **Criação do Modelo `Insurance`:** A seção `Entregáveis` não menciona essa tabela na migração inicial, porém, a funcionalidade `Perfis de Seguro` exige um local para armazenar os dados de cada seguro. Para isso, foi criado o modelo `Insurance`, que se relaciona com um `Client`.
 - **Criação do Modelo `User`:** Para implementar a autenticação JWT com papéis (`advisor`, `viewer`) de forma segura e escalável, foi criado um modelo `User`. Este modelo armazena as credenciais de login e o papel do usuário, sendo distinto do modelo `Client`, que armazena os dados pessoais e financeiros.
 - **Armazenamento de Idade vs. Data de Nascimento:** O case pedia para armazenar a "idade" do cliente. No entanto, armazenar uma idade como um número estático é uma má prática, pois o dado se torna obsoleto anualmente. Para garantir a precisão e a integridade dos dados ao longo do tempo, foi tomada a decisão de armazenar o campo `dateOfBirth` (data de nascimento). A idade é então calculada dinamicamente no backend sempre que necessário, garantindo que a informação seja sempre atual e precisa.
 - **Estrutura do Modelo de Eventos (`Event`):** Para aumentar a robustez e a clareza, o campo que descreve o tipo de um evento foi dividido em duas partes: um campo `category` (um Enum que define o impacto financeiro: `INCOME` ou `EXPENSE`) e um campo `description` (um String para o contexto do usuário). Esta separação permite que o motor de projeção opere de forma segura com base na categoria, enquanto o usuário mantém a flexibilidade de descrever o evento detalhadamente.
+- **Validação de Valores Monetários (Zero vs. Positivo):** Foi feita uma distinção deliberada na validação dos valores monetários para diferentes entidades, baseada em seus propósitos de negócio:
+- **Patrimônio (`Wallet.totalValue`):** Permite valores iguais ou maiores que 0. Isso representa a realidade de um cliente que pode ter um patrimônio zerado, garantindo que o cálculo de alinhamento lide com este caso de borda sem erros.
+- **Outras Entidades (`Goal`, `Event`, `Insurance`):** Exigem valores estritamente positivos (`> 0`). A lógica de negócio assume que uma meta, uma movimentação ou uma apólice de seguro com valor zero não possui significado prático para os cálculos de planejamento e, portanto, não são permitidas na criação dos registros.
 
 ## Endpoints da API
 
@@ -200,6 +206,21 @@ Endpoints para o gerenciamento de dados de clientes. O acesso a todas estas rota
     - `404 Not Found`: `{ "message": "string" }` - Cliente não encontrado.
     - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
     - `401 Unauthorized`: Token não fornecido ou inválido.
+
+---
+
+### Planejamento e Alinhamento (`/clients/:clientId/alignment`)
+
+Endpoint de análise que calcula e retorna o alinhamento de um cliente ao seu plano financeiro.
+
+- **`GET /clients/:clientId/alignment`**
+  - **Descrição:** Calcula o percentual de alinhamento de um cliente, comparando seu patrimônio atual com o patrimônio total planejado em suas metas.
+  - **Respostas:**
+    - `200 OK`: `{ "alignmentPercentage": number, "category": "green" | "yellow-light" | "yellow-dark" | "red" }`
+    - `400 Bad Request`: `{ "message": "string" }` - O cálculo não pôde ser realizado por falta de dados (ex: cliente sem carteira ou sem metas cadastradas).
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR` nem o dono do cliente.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR` ou o `VIEWER` dono do cliente.
 
 ---
 
