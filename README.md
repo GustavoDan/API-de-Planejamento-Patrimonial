@@ -50,6 +50,7 @@ A arquitetura do backend foi projetada com base nos seguintes princípios:
 - **Modelo de Permissões Explícitas e Hooks de Autorização:** A segurança da API é garantida por um modelo de permissões explícito, implementado através de hooks reutilizáveis do Fastify. A autenticação (`authenticate`) e a autorização de papéis (`ensureAdvisor`) são desacopladas da lógica de negócio das rotas. Isso torna o código das rotas mais limpo, simplifica os testes e centraliza as regras de segurança, seguindo o princípio DRY (Don't Repeat Yourself). Rotas administrativas (`/users/:clientId`) e de perfil pessoal (`/me`) são intencionalmente separadas para maior clareza e segurança.
 - **Controle de Acesso Granular (Baseado em Propriedade):** Para além da simples verificação de papéis (`role`), a API implementa um controle de acesso baseado na propriedade dos dados. Isso é evidente nas rotas de leitura de Metas (`Goals`), onde um `VIEWER` tem permissão para acessar apenas os recursos que estão associados ao seu `clientId`. Esta lógica é garantida tanto por hooks reutilizáveis (`ensureOwnerOrAdvisor`) quanto por verificações explícitas dentro das rotas, assegurando a privacidade e a segurança dos dados de cada cliente.
 - **Serialização de Tipos Decimais para `string`:** Para prevenir a perda de precisão que pode ocorrer ao serializar tipos de dados `Decimal` (usados para valores monetários), todos os valores decimais são convertidos para `string` antes de serem enviados nas respostas da API. Isso garante que o frontend receba o valor exato, sem erros de arredondamento de ponto flutuante, sendo responsabilidade do cliente da API fazer o parse para um formato numérico seguro.
+- **Design da API para Recursos 1-para-1 (Upsert Pattern):** Para recursos que têm uma relação estrita de um-para-um com seu pai, como a `Wallet` de um `Client`, adotei o padrão de "Upsert" em vez de um CRUD tradicional. Não existe uma rota `POST` separada para criação. Em vez disso, uma única rota `PUT /clients/:clientId/wallet` é responsável por criar a carteira ou atualizá-la, retornando sempre `200 OK`. Esta abordagem cria uma interface de API mais simples e idempotente para o gerenciamento de recursos singulares.
 
 ## Suposições e Esclarecimentos
 
@@ -251,6 +252,42 @@ Endpoints para o gerenciamento das metas financeiras dos clientes. As rotas de c
   - **Respostas:**
     - `204 No Content`: Meta deletada com sucesso.
     - `404 Not Found`: `{ "message": "string" }` - Meta não encontrada.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+---
+
+### Carteira (`/clients/:clientId/wallet`)
+
+Endpoints para o gerenciamento da carteira de um cliente (patrimônio e alocação de ativos). Como cada cliente possui apenas uma carteira, a API utiliza um padrão de "upsert" na rota `PUT`.
+
+- **`GET /clients/:clientId/wallet`**
+
+  - **Descrição:** Obtém a carteira de um cliente específico.
+  - **Respostas:**
+    - `200 OK`: Objeto da carteira (com `totalValue` como `string`).
+    - `404 Not Found`: `{ "message": "string" }` - Nenhuma carteira foi criada para este cliente ainda.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR` nem o dono do cliente.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR` ou o `VIEWER` dono do cliente.
+
+- **`PUT /clients/:clientId/wallet`**
+
+  - **Descrição:** Cria (na primeira chamada) ou atualiza (nas chamadas subsequentes) a carteira de um cliente.
+  - **Corpo da Requisição:** `{ "totalValue": number, "assetClasses?": [...] }`
+  - **Respostas:**
+    - `200 OK`: Objeto da carteira criada/atualizada (com `totalValue` como `string`).
+    - `404 Not Found`: `{ "message": "string" }` - O cliente com o `clientId` especificado não foi encontrado.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
+
+- **`DELETE /clients/:clientId/wallet`**
+  - **Descrição:** Deleta a carteira de um cliente específico.
+  - **Respostas:**
+    - `204 No Content`: Carteira deletada com sucesso.
+    - `404 Not Found`: `{ "message": "string" }` - Nenhuma carteira existe para este cliente.
     - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
     - `401 Unauthorized`: Token não fornecido ou inválido.
   - **Acesso:** `ADVISOR`.

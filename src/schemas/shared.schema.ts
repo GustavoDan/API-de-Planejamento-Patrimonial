@@ -22,3 +22,8 @@ export const createPaginatedResponseSchema = <T extends ZodType>(
 export const returnMessageSchema = z.object({
   message: z.string(),
 });
+
+export const assetClassSchema = z.object({
+  className: z.string().min(1),
+  percentage: z.number().min(0).max(100),
+});

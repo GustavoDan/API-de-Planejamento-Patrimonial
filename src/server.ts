@@ -20,6 +20,7 @@ import {
 } from "./hooks/auth";
 import { clientRoutes } from "./routes/client.routes";
 import { goalRoutes } from "./routes/goal.routes";
+import { walletRoutes } from "./routes/wallet.routes";
 
 config({ path: resolve(__dirname, "..", ".env") });
 
@@ -62,6 +63,7 @@ app.register(userRoutes);
 app.register(sessionRoutes);
 app.register(clientRoutes);
 app.register(goalRoutes);
+app.register(walletRoutes);
 
 app.decorate("authenticate", authenticate);
 app.decorate("ensureAdvisor", ensureAdvisor);
