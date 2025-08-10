@@ -51,6 +51,7 @@ A arquitetura do backend foi projetada com base nos seguintes princípios:
 - **Controle de Acesso Granular (Baseado em Propriedade):** Para além da simples verificação de papéis (`role`), a API implementa um controle de acesso baseado na propriedade dos dados. Isso é evidente nas rotas de leitura de Metas (`Goals`), onde um `VIEWER` tem permissão para acessar apenas os recursos que estão associados ao seu `clientId`. Esta lógica é garantida tanto por hooks reutilizáveis (`ensureOwnerOrAdvisor`) quanto por verificações explícitas dentro das rotas, assegurando a privacidade e a segurança dos dados de cada cliente.
 - **Serialização de Tipos Decimais para `string`:** Para prevenir a perda de precisão que pode ocorrer ao serializar tipos de dados `Decimal` (usados para valores monetários), todos os valores decimais são convertidos para `string` antes de serem enviados nas respostas da API. Isso garante que o frontend receba o valor exato, sem erros de arredondamento de ponto flutuante, sendo responsabilidade do cliente da API fazer o parse para um formato numérico seguro.
 - **Design da API para Recursos 1-para-1 (Upsert Pattern):** Para recursos que têm uma relação estrita de um-para-um com seu pai, como a `Wallet` de um `Client`, adotei o padrão de "Upsert" em vez de um CRUD tradicional. Não existe uma rota `POST` separada para criação. Em vez disso, uma única rota `PUT /clients/:clientId/wallet` é responsável por criar a carteira ou atualizá-la, retornando sempre `200 OK`. Esta abordagem cria uma interface de API mais simples e idempotente para o gerenciamento de recursos singulares.
+- **Separação da Lógica de Negócio em Serviços:** Para funcionalidades complexas como o cálculo de alinhamento e a projeção patrimonial, a lógica de negócio foi abstraída em "Serviços" (`.service.ts`). As rotas da API atuam como uma camada fina, responsável apenas por lidar com a requisição/resposta e chamar o serviço correspondente. Isso torna a lógica de negócio principal independente do framework web, altamente testável com testes unitários, e mais fácil de manter.
 
 ## Suposições e Esclarecimentos
 
@@ -66,6 +67,11 @@ Durante o desenvolvimento, algumas decisões foram tomadas com base em interpret
 - **Validação de Valores Monetários (Zero vs. Positivo):** Foi feita uma distinção deliberada na validação dos valores monetários para diferentes entidades, baseada em seus propósitos de negócio:
 - **Patrimônio (`Wallet.totalValue`):** Permite valores iguais ou maiores que 0. Isso representa a realidade de um cliente que pode ter um patrimônio zerado, garantindo que o cálculo de alinhamento lide com este caso de borda sem erros.
 - **Outras Entidades (`Goal`, `Event`, `Insurance`):** Exigem valores estritamente positivos (`> 0`). A lógica de negócio assume que uma meta, uma movimentação ou uma apólice de seguro com valor zero não possui significado prático para os cálculos de planejamento e, portanto, não são permitidas na criação dos registros.
+- **Lógica do Motor de Projeção Patrimonial:** O motor de simulação (`simulateWealthCurve`) foi construído com base nas seguintes premissas de negócio para garantir consistência e previsibilidade:
+  - **Juros Compostos Mensais:** A taxa de juros anual fornecida é convertida para uma taxa mensal efetiva, que é aplicada mensalmente sobre o saldo total.
+  - **Ordem de Operações:** Dentro de cada mês, a ordem dos cálculos é: (1) aplicação de eventos anuais (se for Janeiro), (2) aplicação de eventos mensais, (3) aplicação dos juros compostos sobre o novo saldo.
+  - **Timing dos Eventos:** Eventos `UNIQUE` são aplicados uma única vez no início da simulação. Eventos `ANNUAL` são aplicados sempre no início de Janeiro de cada ano. Eventos `MONTHLY` são aplicados no início de cada mês.
+  - **Tratamento de Dívida:** A simulação permite que o patrimônio projetado se torne negativo caso as despesas superem os ativos. Os juros compostos são aplicados normalmente sobre o saldo negativo, simulando o custo de uma dívida.
 
 ## Endpoints da API
 
@@ -218,6 +224,22 @@ Endpoint de análise que calcula e retorna o alinhamento de um cliente ao seu pl
   - **Respostas:**
     - `200 OK`: `{ "alignmentPercentage": number, "category": "green" | "yellow-light" | "yellow-dark" | "red" }`
     - `400 Bad Request`: `{ "message": "string" }` - O cálculo não pôde ser realizado por falta de dados (ex: cliente sem carteira ou sem metas cadastradas).
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR` nem o dono do cliente.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR` ou o `VIEWER` dono do cliente.
+
+---
+
+### Simulações e Projeções (`/clients/:clientId/projections`)
+
+Endpoints para gerar projeções de evolução patrimonial e, futuramente, gerenciar simulações salvas.
+
+- **`POST /clients/:clientId/projections`**
+  - **Descrição:** Gera uma projeção patrimonial ano a ano até 2060 para um cliente, com base em seu patrimônio atual, movimentações futuras e uma taxa de juros real.
+  - **Corpo da Requisição:** `{ "annualRate?": number }` (taxa em percentual, ex: `4` para 4%. Padrão é 4% se não fornecido).
+  - **Respostas:**
+    - `200 OK`: `[ { "year": number, "projectedValue": "string" } ]` - Um array com a projeção anual.
+    - `400 Bad Request`: `{ "message": "string" }` - A projeção não pôde ser realizada (ex: cliente sem carteira cadastrada).
     - `403 Forbidden`: O usuário autenticado não é um `ADVISOR` nem o dono do cliente.
     - `401 Unauthorized`: Token não fornecido ou inválido.
   - **Acesso:** `ADVISOR` ou o `VIEWER` dono do cliente.
