@@ -198,7 +198,10 @@ export async function userRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { userId: id } = userIdParamsSchema.parse(request.params);
-      let { email, password, role } = updateUserSchema.parse(request.body);
+
+      const parsedBody = updateUserSchema.parse(request.body);
+      const { email, role } = parsedBody;
+      let password = parsedBody.password;
 
       if (password) {
         password = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);

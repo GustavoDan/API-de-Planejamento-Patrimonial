@@ -42,7 +42,7 @@ export function simulateWealthCurve(
 
   currentValue = calculateValueAfterEvents(uniqueEvents, currentValue);
 
-  let currentDate = new Date(now.getUTCFullYear(), now.getUTCMonth(), 1);
+  const currentDate = new Date(now.getUTCFullYear(), now.getUTCMonth(), 1);
 
   while (currentDate < projectionEndDate) {
     const currentMonth = currentDate.getUTCMonth();

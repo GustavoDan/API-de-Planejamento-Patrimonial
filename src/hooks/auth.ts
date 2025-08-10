@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { clientIdParamsSchema } from "../schemas/client.schema";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const jwtPayloadSchema = z.object({
   sub: z.uuid(),
   role: z.enum(["ADVISOR", "VIEWER"]),
@@ -18,7 +19,7 @@ export async function authenticate(
 ) {
   try {
     await request.jwtVerify();
-  } catch (err) {
+  } catch {
     reply
       .status(401)
       .send({ message: "Invalid or expired authentication token." });
