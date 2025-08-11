@@ -77,4 +77,5 @@ app.decorate("authenticate", authenticate);
 app.decorate("ensureAdvisor", ensureAdvisor);
 app.decorate("ensureOwnerOrAdvisor", ensureOwnerOrAdvisor);
 
-app.listen({ port: 3000 });
+const PORT = Number(process.env.PORT) || 3333;
+app.listen({ port: PORT, host: "0.0.0.0" });

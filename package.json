@@ -10,7 +10,11 @@
     "test": "jest",
     "lint": "eslint src --ext .ts --fix",
     "db:migrate": "npx prisma migrate dev",
-    "db:studio": "npx prisma studio"
+    "db:studio": "npx prisma studio",
+    "test:migrate": "dotenv -e .env.test -- npx prisma migrate deploy",
+    "test:seed": "dotenv -e .env.test -- npx prisma db seed",
+    "test:run": "dotenv -e .env.test -- jest --runInBand",
+    "test:coverage": "npm run test:migrate && npm run test:run -- --coverage"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +27,7 @@
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.39.0",
+    "dotenv-cli": "^10.0.0",
     "eslint": "^9.33.0",
     "jest": "^30.0.5",
     "prisma": "^6.13.0",
