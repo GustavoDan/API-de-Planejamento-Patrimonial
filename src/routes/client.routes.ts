@@ -55,8 +55,17 @@ export async function clientRoutes(app: FastifyInstance) {
       >(
         prisma.client,
         {
-          select: clientPublicSelect,
-          orderBy: { createdAt: "desc" },
+          select: {
+            ...clientPublicSelect,
+            wallet: {
+              select: {
+                totalValue: true,
+                updatedAt: true,
+              },
+            },
+          },
+
+          orderBy: { wallet: { updatedAt: "asc" } },
         },
         { page, pageSize }
       );

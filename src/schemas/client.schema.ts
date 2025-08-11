@@ -34,10 +34,19 @@ export const clientResponseSchema = z.object({
   updatedAt: z.date(),
 });
 
+export const paginableClientResponseSchema = clientResponseSchema.extend({
+  wallet: z
+    .object({
+      totalValue: z.any(),
+      updatedAt: z.date(),
+    })
+    .nullable(),
+});
+
 export const paginatedClientsResponseSchema = createPaginatedResponseSchema(
-  clientResponseSchema
+  paginableClientResponseSchema
 ).extend({
-  clients: z.array(clientResponseSchema),
+  clients: z.array(paginableClientResponseSchema),
   items: z.undefined(),
 });
 
