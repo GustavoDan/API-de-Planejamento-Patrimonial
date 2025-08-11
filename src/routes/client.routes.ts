@@ -6,6 +6,7 @@ import {
   clientIdParamsSchema,
   clientResponseSchema,
   paginatedClientsResponseSchema,
+  clientStatsResponseSchema,
 } from "../schemas/client.schema";
 import {
   returnMessageSchema,
@@ -14,6 +15,7 @@ import {
 import { paginate } from "../utils/pagination";
 import { Client, Prisma } from "@prisma/client";
 import { z } from "zod";
+import { getClientPlanningStats } from "../services/client.service";
 
 const clientPublicSelect = {
   id: true,
@@ -215,6 +217,28 @@ export async function clientRoutes(app: FastifyInstance) {
         }
         throw error;
       }
+    }
+  );
+
+  app.get(
+    "/clients/stats",
+    {
+      onRequest: [app.authenticate, app.ensureAdvisor],
+      schema: {
+        description:
+          "Obtém estatísticas sobre os clientes, como a porcentagem com planejamento.",
+        tags: ["Clients"],
+        response: {
+          200: clientStatsResponseSchema,
+          401: returnMessageSchema,
+          403: returnMessageSchema,
+        },
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    async (_, reply) => {
+      const stats = await getClientPlanningStats();
+      return reply.status(200).send(stats);
     }
   );
 }

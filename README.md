@@ -53,6 +53,7 @@ A arquitetura do backend foi projetada com base nos seguintes princípios:
 - **Design da API para Recursos 1-para-1 (Upsert Pattern):** Para recursos que têm uma relação estrita de um-para-um com seu pai, como a `Wallet` de um `Client`, adotei o padrão de "Upsert" em vez de um CRUD tradicional. Não existe uma rota `POST` separada para criação. Em vez disso, uma única rota `PUT /clients/:clientId/wallet` é responsável por criar a carteira ou atualizá-la, retornando sempre `200 OK`. Esta abordagem cria uma interface de API mais simples e idempotente para o gerenciamento de recursos singulares.
 - **Separação da Lógica de Negócio em Serviços:** Para funcionalidades complexas como o cálculo de alinhamento e a projeção patrimonial, a lógica de negócio foi abstraída em "Serviços" (`.service.ts`). As rotas da API atuam como uma camada fina, responsável apenas por lidar com a requisição/resposta e chamar o serviço correspondente. Isso torna a lógica de negócio principal independente do framework web, altamente testável com testes unitários, e mais fácil de manter.
 - **Imutabilidade de Registros Históricos:** A entidade `Simulation` foi projetada para ser um registro histórico imutável. Por design, não existe uma rota `PUT` para atualizar uma simulação salva. Se as premissas de uma projeção mudam, o fluxo correto é gerar e salvar uma _nova_ simulação, preservando a integridade do histórico. O ciclo de vida do recurso é limitado a `POST` (Criar), `GET` (Ler) e `DELETE` (Deletar).
+- **Endpoints de Agregação de Dados:** Para otimizar a performance do frontend e reduzir a complexidade no lado do cliente, foram criados endpoints de agregação dedicados (ex: `GET /clients/stats`). Em vez de forçar o frontend a buscar listas completas de dados e realizar cálculos, o backend assume essa responsabilidade, executando queries eficientes no banco de dados e retornando apenas os dados já consolidados. Isso minimiza o tráfego de rede e a carga de processamento no navegador.
 
 ## Suposições e Esclarecimentos
 
@@ -208,12 +209,21 @@ Endpoints para o gerenciamento de dados de clientes. O acesso a todas estas rota
     - `401 Unauthorized`: Token não fornecido ou inválido.
 
 - **`DELETE /clients/:clientId`**
+
   - **Descrição:** Deleta um cliente específico.
   - **Respostas:**
     - `204 No Content`: Cliente deletado com sucesso.
     - `404 Not Found`: `{ "message": "string" }` - Cliente não encontrado.
     - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
     - `401 Unauthorized`: Token não fornecido ou inválido.
+
+- **`GET /clients/stats`**
+  - **Descrição:** Retorna estatísticas agregadas sobre a base de clientes, como o número total e a porcentagem de clientes com um planejamento financeiro ativo (definido como ter uma carteira e pelo menos uma meta).
+  - **Respostas:**
+    - `200 OK`: `{ "totalClients": number, "clientsWithPlan": number, "percentageWithPlan": number }`.
+    - `403 Forbidden`: O usuário autenticado não é um `ADVISOR`.
+    - `401 Unauthorized`: Token não fornecido ou inválido.
+  - **Acesso:** `ADVISOR`.
 
 ---
 

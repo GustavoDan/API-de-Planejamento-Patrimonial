@@ -4,6 +4,11 @@ import { prisma } from "../../lib/prisma";
 import { createTestUser, TEST_EMAIL_SUFFIX } from "./factories/user-factory";
 import { loginAndGetToken } from "./utils/auth-helper";
 import { createTestClient } from "./factories/client-factory";
+import { createTestWallet, TEST_ASSET_CLASS } from "./factories/wallet-factory";
+import {
+  createTestGoal,
+  TEST_GOAL_DESCRIPTION_SUFFIX,
+} from "./factories/goal-factory";
 
 describe("Client Routes (CRUD)", () => {
   let advisorToken: string;
@@ -20,6 +25,20 @@ describe("Client Routes (CRUD)", () => {
   });
 
   afterEach(async () => {
+    await prisma.goal.deleteMany({
+      where: {
+        description: {
+          endsWith: TEST_GOAL_DESCRIPTION_SUFFIX,
+        },
+      },
+    });
+    await prisma.wallet.deleteMany({
+      where: {
+        assetClasses: {
+          equals: TEST_ASSET_CLASS,
+        },
+      },
+    });
     await prisma.user.deleteMany({
       where: {
         email: {
@@ -266,6 +285,84 @@ describe("Client Routes (CRUD)", () => {
         where: { id: client.id },
       });
       expect(stillExists).not.toBeNull();
+    });
+  });
+
+  describe("GET /clients/stats", () => {
+    it("should correctly calculate planning statistics", async () => {
+      const clientWithPlan1 = await createTestClient();
+      await createTestWallet({ clientId: clientWithPlan1.id });
+      await createTestGoal({ clientId: clientWithPlan1.id });
+
+      const clientWithPlan2 = await createTestClient();
+      await createTestWallet({ clientId: clientWithPlan2.id });
+      await createTestGoal({ clientId: clientWithPlan2.id });
+
+      const clientIncomplete1 = await createTestClient();
+      await createTestWallet({ clientId: clientIncomplete1.id });
+
+      const clientIncomplete2 = await createTestClient();
+      await createTestGoal({ clientId: clientIncomplete2.id });
+
+      await createTestClient();
+
+      const response = await request(app.server)
+        .get("/clients/stats")
+        .set("Authorization", `Bearer ${advisorToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        totalClients: 5,
+        clientsWithPlan: 2,
+        percentageWithPlan: 40.0,
+      });
+    });
+
+    it("should return zero for all stats when there are no clients", async () => {
+      const response = await request(app.server)
+        .get("/clients/stats")
+        .set("Authorization", `Bearer ${advisorToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        totalClients: 0,
+        clientsWithPlan: 0,
+        percentageWithPlan: 0,
+      });
+    });
+
+    it("should return 100% when all clients have a plan", async () => {
+      const client1 = await createTestClient();
+      await createTestWallet({ clientId: client1.id });
+      await createTestGoal({ clientId: client1.id });
+
+      const client2 = await createTestClient();
+      await createTestWallet({ clientId: client2.id });
+      await createTestGoal({ clientId: client2.id });
+
+      const response = await request(app.server)
+        .get("/clients/stats")
+        .set("Authorization", `Bearer ${advisorToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        totalClients: 2,
+        clientsWithPlan: 2,
+        percentageWithPlan: 100.0,
+      });
+    });
+
+    it("should return 403 if a VIEWER tries to access the stats", async () => {
+      const { user: viewer, plainPassword } = await createTestUser({
+        role: "VIEWER",
+      });
+      const viewerToken = await loginAndGetToken(viewer.email, plainPassword);
+
+      const response = await request(app.server)
+        .get("/clients/stats")
+        .set("Authorization", `Bearer ${viewerToken}`);
+
+      expect(response.status).toBe(403);
     });
   });
 });

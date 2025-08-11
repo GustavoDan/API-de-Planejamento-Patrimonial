@@ -40,3 +40,9 @@ export const paginatedClientsResponseSchema = createPaginatedResponseSchema(
   clients: z.array(clientResponseSchema),
   items: z.undefined(),
 });
+
+export const clientStatsResponseSchema = z.object({
+  totalClients: z.number().int(),
+  clientsWithPlan: z.number().int(),
+  percentageWithPlan: z.number(),
+});
