@@ -14,7 +14,8 @@
     "test:migrate": "dotenv -e .env.test -- npx prisma migrate deploy",
     "test:seed": "dotenv -e .env.test -- npx prisma db seed",
     "test:run": "dotenv -e .env.test -- jest --runInBand",
-    "test:coverage": "npm run test:migrate && npm run test:run -- --coverage"
+    "test:coverage": "npm run test:migrate && npm run test:run -- --coverage",
+    "db:seed:prod": "node dist/prisma/seed.js"
   },
   "keywords": [],
   "author": "",

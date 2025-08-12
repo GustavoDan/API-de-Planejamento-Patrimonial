@@ -77,6 +77,67 @@ Durante o desenvolvimento, algumas decisões foram tomadas com base em interpret
   - **Tratamento de Dívida:** A simulação permite que o patrimônio projetado se torne negativo caso as despesas superem os ativos. Os juros compostos são aplicados normalmente sobre o saldo negativo, simulando o custo de uma dívida.
 - **Armazenamento de Premissas da Simulação:** Para garantir que cada simulação salva seja um registro completo e auto-contido, a API armazena não apenas o resultado da projeção (`projectionData`), mas também as premissas chave que a geraram (como a `taxa anual` e o `ano final`). Isso garante que o histórico possa ser reinterpretado com precisão no futuro, mesmo que as regras de negócio (como a projeção ser sempre até o ano de 2060) ou os padrões do sistema mudem.
 
+## Configuração do Ambiente Completo (Full Stack)
+
+Este é o repositório do **Backend**. Para rodar a aplicação completa, você também precisará do repositório do Frontend, que contém a interface do usuário.
+
+**Repositório do Backend:** https://github.com/GustavoDan/Frontend-Planejamento-Patrimonial
+
+Siga os passos abaixo para configurar e rodar todo o ambiente com Docker Compose:
+
+**1. Crie uma Pasta Principal:**
+Crie uma pasta em sua máquina para abrigar ambos os projetos. Vamos chamá-la de `mfo-planner`.
+
+```bash
+mkdir mfo-planner
+cd mfo-planner
+```
+
+**2. Clone os Repositórios:**
+Dentro da pasta mfo-planner, clone os dois repositórios (frontend e backend).
+
+```bash
+git clone https://github.com/GustavoDan/API-de-Planejamento-Patrimonial.git
+git clone https://github.com/GustavoDan/Frontend-Planejamento-Patrimonial.git
+```
+
+**3. Renomeie as Pastas (Importante):**
+O docker-compose.yml espera que as pastas tenham nomes específicos. Renomeie as pastas dos repositórios clonados para frontend e backend.
+
+```bash
+mv Frontend-Planejamento-Patrimonial frontend
+mv API-de-Planejamento-Patrimonial backend
+```
+
+Sua estrutura de pastas agora deve ser:
+
+```
+mfo-planner/
+├── frontend/
+└── backend/
+```
+
+**4. Mova o Arquivo docker-compose.yml:**
+Copie (ou mova) o arquivo docker-compose.yml de dentro da pasta frontend (ou backend) para a pasta raiz mfo-planner.
+
+```bash
+mv frontend/docker-compose.yml .
+```
+
+**5. Suba os Containers:**
+Agora, na pasta raiz mfo-planner, execute o Docker Compose. Ele irá construir as imagens para o frontend e o backend e iniciar todos os serviços.
+
+```bash
+docker compose up --build
+```
+
+Pronto! A aplicação estará disponível em:
+
+- Frontend: http://localhost:3000
+- Documentação da API (Swagger): http://localhost:3333/docs (assumindo que a porta do backend é 3333)
+
+Para parar todos os serviços, execute docker compose down na mesma pasta.
+
 ## Endpoints da API
 
 A documentação interativa completa da API está disponível via Swagger na rota `/docs` quando a aplicação está em execução. Abaixo está um resumo dos principais endpoints implementados.
@@ -506,3 +567,7 @@ Endpoints para o gerenciamento dos seguros de um cliente.
   - **Acesso:** `ADVISOR`.
 
 ---
+
+```
+
+```
