@@ -81,6 +81,7 @@ async function main() {
 
     const hasWalletAndGoals = Math.random() <= 0.7;
     const hasInsurance = Math.random() <= 0.6;
+    const hasSimulations = Math.random() <= 0.5;
 
     await prisma.client.create({
       data: {
@@ -167,6 +168,35 @@ async function main() {
                 dec: 2,
               }),
             })),
+          },
+        }),
+
+        ...(hasSimulations && {
+          simulations: {
+            create: Array.from({
+              length: faker.number.int({ min: 1, max: 3 }),
+            }).map(() => {
+              const annualRate = faker.number.float({
+                min: 2,
+                max: 8,
+                multipleOf: 0.5,
+              });
+              let startValue = faker.number.float({ min: 50000, max: 500000 });
+              const projectionData = [];
+              for (let year = new Date().getFullYear(); year <= 2060; year++) {
+                startValue *= 1 + annualRate / 100;
+                projectionData.push({
+                  year,
+                  projectedValue: startValue.toFixed(2),
+                });
+              }
+
+              return {
+                projection: projectionData as Prisma.InputJsonValue,
+                rate: annualRate,
+                endYear: 2060,
+              };
+            }),
           },
         }),
       },
