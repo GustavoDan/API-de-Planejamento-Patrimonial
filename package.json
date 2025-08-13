@@ -23,7 +23,6 @@
   "type": "commonjs",
   "devDependencies": {
     "@eslint/js": "^9.33.0",
-    "@faker-js/faker": "^9.9.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.2.0",
     "@types/supertest": "^6.0.3",
@@ -41,6 +40,7 @@
     "typescript-eslint": "^8.39.0"
   },
   "dependencies": {
+    "@faker-js/faker": "^9.9.0",
     "@fastify/cors": "^11.1.0",
     "@fastify/jwt": "^9.1.0",
     "@fastify/swagger": "^9.5.1",
