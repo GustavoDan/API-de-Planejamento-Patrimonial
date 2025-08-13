@@ -138,6 +138,20 @@ Pronto! A aplicação estará disponível em:
 
 Para parar todos os serviços, execute docker compose down na mesma pasta.
 
+## Database Seeding
+
+Para facilitar o desenvolvimento e os testes manuais da aplicação, o projeto inclui um script de seed robusto que popula o banco de dados com dados aleatórios e realistas, utilizando a biblioteca **Faker.js**.
+
+Ao executar o script de seed, ele irá:
+
+1.  **Limpar completamente** todas as tabelas para garantir um estado inicial limpo.
+2.  Criar o **usuário `ADVISOR` padrão**, cujas credenciais são definidas no arquivo `.env`.
+3.  Gerar **150 clientes aleatórios** com uma variedade de dados associados:
+    - Cada cliente terá uma conta de usuário `VIEWER` correspondente, com a senha padrão `"password123"`.
+    - Aproximadamente **70%** dos clientes terão um planejamento financeiro (uma `Wallet` e `Goals`).
+    - Aproximadamente **60%** dos clientes terão apólices de `Insurance`.
+    - Todos os clientes terão um histórico de `Events` (movimentações).
+
 ## Endpoints da API
 
 A documentação interativa completa da API está disponível via Swagger na rota `/docs` quando a aplicação está em execução. Abaixo está um resumo dos principais endpoints implementados.
